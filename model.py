@@ -1,6 +1,8 @@
 # Imports 
+from typing import Any
 import pytorch_lightning as pl
 import math as maths
+from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch as pt
 from torch import nn
 from torch.nn import functional as F
@@ -58,6 +60,7 @@ class recognitionModel(pl.LightningModule):
         self.train_acc = tm.Accuracy(task = "multiclass" , num_classes = 10)
         self.train_acc = tm.Accuracy(task = "multiclass" , num_classes = 10)
 
+    # Forward propagation step
     def forward(self, x):
 
         if (conv_layers > 0):
@@ -73,3 +76,39 @@ class recognitionModel(pl.LightningModule):
         x = self.linear(x)
 
         return x
+    
+    def training_step(self, batch, batch_idx):
+        inputs, labels = batch
+        logits = self.forward(inputs)
+        loss = self.loss(logits, labels)
+
+        self.log('train_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('train_acc', self.train_acc(self.softmax(logits), labels), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+
+        return loss
+    
+    def validation_step(self, batch, batch_idx):
+        inputs, labels = batch
+        logits = self.forward(inputs)
+        loss = self.loss(logits, labels)
+
+        self.log('val_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('val_acc', self.val_acc(self.softmax(logits), labels), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+
+        return loss
+    
+    def test_step(self, batch, batch_idx):
+        inputs, labels = batch
+        logits = self.forward(inputs)
+        loss = self.loss(logits, labels)
+
+        self.log('test_loss', loss, on_step=True, on_epoch=True, prog_bar=True, logger=True)
+        self.log('test_acc', self.test_acc(self.softmax(logits), labels), on_step=True, on_epoch=True, prog_bar=True, logger=True)
+
+        return loss
+
+    # Configure optimiser
+    def configure_optimizers(self):
+        optimiser = pt.optim.Adam(self.parameters(), lr=self.lr)
+        
+        return optimiser
