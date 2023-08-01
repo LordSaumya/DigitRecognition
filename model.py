@@ -1,8 +1,6 @@
 # Imports 
-from typing import Any
 import pytorch_lightning as pl
 import math as maths
-from pytorch_lightning.utilities.types import STEP_OUTPUT
 import torch as pt
 from torch import nn
 from torch.nn import functional as F
@@ -11,6 +9,7 @@ from torchvision import transforms
 from pytorch_lightning import loggers as pl_loggers
 import matplotlib.pyplot as plt
 from torchvision.datasets import MNIST
+
 
 # Data
 from dataLoader import MNISTDataLoader
@@ -57,8 +56,8 @@ class recognitionModel(pl.LightningModule):
 
         # Metrics
         self.train_acc = tm.Accuracy(task = "multiclass", num_classes = 10)
-        self.train_acc = tm.Accuracy(task = "multiclass" , num_classes = 10)
-        self.train_acc = tm.Accuracy(task = "multiclass" , num_classes = 10)
+        self.val_acc = tm.Accuracy(task = "multiclass" , num_classes = 10)
+        self.test_acc = tm.Accuracy(task = "multiclass" , num_classes = 10)
 
     # Forward propagation step
     def forward(self, x):
@@ -110,5 +109,17 @@ class recognitionModel(pl.LightningModule):
     # Configure optimiser
     def configure_optimizers(self):
         optimiser = pt.optim.Adam(self.parameters(), lr=self.lr)
-        
+
         return optimiser
+    
+tensorboard = pl_loggers.TensorBoardLogger('logs/')
+trainer = pl.Trainer(logger = tensorboard, max_epochs = 75)
+model = recognitionModel()
+dataLoader = MNISTDataLoader()
+
+# Main
+if __name__ == "__main__":
+    trainer.fit(model, dataLoader)
+    trainer.validate(model, dataLoader)
+    trainer.test(model, dataLoader)
+
