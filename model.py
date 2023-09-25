@@ -14,9 +14,10 @@ from torchvision.datasets import MNIST
 # Data
 from dataLoader import MNISTDataLoader
 
+# Model
 # Number and nature of convolutional layers
-conv_layers = 8
-growing = True
+conv_layers = 2
+growing = False
 
 # Model
 class recognitionModel(pl.LightningModule):
@@ -68,14 +69,12 @@ class recognitionModel(pl.LightningModule):
                 x = self.conv[i](x)
                 x = self.relu(x)
 
-        # Flatten
-        x = nn.Flatten()(x)
-
         # linear layer
+        x = x.view(-1, 28*28)
         x = self.linear(x)
 
         return x
-    
+
     def training_step(self, batch, batch_idx):
         inputs, labels = batch
         logits = self.forward(inputs)
@@ -85,7 +84,7 @@ class recognitionModel(pl.LightningModule):
         self.log('train_acc', self.train_acc(self.softmax(logits), labels), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
-    
+
     def validation_step(self, batch, batch_idx):
         inputs, labels = batch
         logits = self.forward(inputs)
@@ -95,7 +94,7 @@ class recognitionModel(pl.LightningModule):
         self.log('val_acc', self.val_acc(self.softmax(logits), labels), on_step=True, on_epoch=True, prog_bar=True, logger=True)
 
         return loss
-    
+
     def test_step(self, batch, batch_idx):
         inputs, labels = batch
         logits = self.forward(inputs)
